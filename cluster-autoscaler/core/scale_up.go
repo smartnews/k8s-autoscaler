@@ -295,6 +295,7 @@ func computeExpansionOption(context *context.AutoscalingContext, podEquivalenceG
 			option.Pods = append(option.Pods, eg.pods...)
 			// mark pod group as (theoretically) schedulable
 			eg.schedulable = true
+			klog.V(2).Infof("Pod %s can be scheduled on %s", samplePod.Name, nodeGroup.Id())
 		} else {
 			klog.V(2).Infof("Pod %s can't be scheduled on %s, predicate checking error: %v", samplePod.Name, nodeGroup.Id(), err.VerboseMessage())
 			if podCount := len(eg.pods); podCount > 1 {
