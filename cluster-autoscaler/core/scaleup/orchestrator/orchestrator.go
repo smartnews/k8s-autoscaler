@@ -503,6 +503,8 @@ func (o *ScaleUpOrchestrator) ComputeExpansionOption(
 		estimator.NewEstimationContext(o.autoscalingContext.MaxNodesTotal, option.SimilarNodeGroups, currentNodeCount),
 	)
 	option.NodeCount, option.Pods = expansionEstimator.Estimate(pods, nodeInfo, nodeGroup)
+	// there could be 1000 pods, only log 1 for debug
+	klog.V(2).Infof("Scheduling option node count: %v, pods: %v", option.NodeCount, option.Pods[0])
 	metrics.UpdateDurationFromStart(metrics.Estimate, estimateStart)
 
 	autoscalingOptions, err := nodeGroup.GetOptions(o.autoscalingContext.NodeGroupDefaults)
