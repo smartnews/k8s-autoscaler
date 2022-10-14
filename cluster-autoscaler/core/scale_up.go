@@ -313,6 +313,8 @@ func computeExpansionOption(context *context.AutoscalingContext, podEquivalenceG
 	if len(option.Pods) > 0 {
 		estimator := context.EstimatorBuilder(context.PredicateChecker, context.ClusterSnapshot)
 		option.NodeCount, option.Pods = estimator.Estimate(option.Pods, nodeInfo, option.NodeGroup)
+		// there could be 1000 pods, only log 1 for debug
+		klog.V(2).Infof("Scheduling option node count: %v, pods: %v", option.NodeCount, option.Pods[0])
 	}
 
 	return option, nil
@@ -495,6 +497,7 @@ func ScaleUp(context *context.AutoscalingContext, processors *ca_processors.Auto
 
 		createNodeGroupResults := make([]nodegroups.CreateNodeGroupResult, 0)
 		if !bestOption.NodeGroup.Exist() {
+			klog.V(2).Infof("Best option group doesn't exist: %s", bestOption.NodeGroup.Id())
 			oldId := bestOption.NodeGroup.Id()
 			createNodeGroupResult, err := processors.NodeGroupManager.CreateNodeGroup(context, bestOption.NodeGroup)
 			if err != nil {
@@ -521,6 +524,7 @@ func ScaleUp(context *context.AutoscalingContext, processors *ca_processors.Auto
 			}
 
 			for _, nodeGroup := range createNodeGroupResult.ExtraCreatedNodeGroups {
+				klog.V(2).Infof("Failover to nodegroup %v", nodeGroup.Id())
 				nodeInfo, err := utils.GetNodeInfoFromTemplate(nodeGroup, daemonSets, context.PredicateChecker, ignoredTaints)
 
 				if err != nil {
