@@ -288,14 +288,16 @@ func computeExpansionOption(context *context.AutoscalingContext, podEquivalenceG
 		return expander.Option{}, err
 	}
 
+	var samplePod *apiv1.Pod
+
 	for _, eg := range podEquivalenceGroups {
-		samplePod := eg.pods[0]
+		samplePod = eg.pods[0]
 		if err := context.PredicateChecker.CheckPredicates(context.ClusterSnapshot, samplePod, nodeInfo.Node().Name); err == nil {
 			// add pods to option
 			option.Pods = append(option.Pods, eg.pods...)
 			// mark pod group as (theoretically) schedulable
 			eg.schedulable = true
-			klog.V(2).Infof("Pod %s can be scheduled on %s", samplePod.Name, nodeGroup.Id())
+			klog.V(1).Infof("Pod %s can be scheduled on %s along with similar %d pods", samplePod.Name, nodeGroup.Id(), len(eg.pods))
 		} else {
 			klog.V(2).Infof("Pod %s can't be scheduled on %s, predicate checking error: %v", samplePod.Name, nodeGroup.Id(), err.VerboseMessage())
 			if podCount := len(eg.pods); podCount > 1 {
@@ -314,7 +316,7 @@ func computeExpansionOption(context *context.AutoscalingContext, podEquivalenceG
 		estimator := context.EstimatorBuilder(context.PredicateChecker, context.ClusterSnapshot)
 		option.NodeCount, option.Pods = estimator.Estimate(option.Pods, nodeInfo, option.NodeGroup)
 		// there could be 1000 pods, only log 1 for debug
-		klog.V(2).Infof("Scheduling option node count: %v, pods: %v", option.NodeCount, option.Pods[0])
+		klog.V(1).Infof("Found an option for pod %s: ASG %s, nodecount %d", samplePod.Name, nodeGroup.Id(), option.NodeCount)
 	}
 
 	return option, nil
@@ -472,7 +474,9 @@ func ScaleUp(context *context.AutoscalingContext, processors *ca_processors.Auto
 
 	// Pick some expansion option.
 	options := make([]expander.Option, 0, len(expansionOptions))
+	klog.V(1).Info("Get all options to decide the best")
 	for _, o := range expansionOptions {
+		klog.V(1).Infof("Candidate ASG %s %d", o.NodeGroup.Id(), o.NodeCount)
 		options = append(options, o)
 	}
 	bestOption := context.ExpanderStrategy.BestOption(options, nodeInfos)
@@ -630,6 +634,7 @@ func ScaleUp(context *context.AutoscalingContext, processors *ca_processors.Auto
 		}, nil
 	}
 
+	klog.V(2).Info("Failed to decide scale-up plan")
 	return &status.ScaleUpStatus{
 		Result:                  status.ScaleUpNoOptionsAvailable,
 		PodsRemainUnschedulable: getRemainingPods(podEquivalenceGroups, skippedNodeGroups),
