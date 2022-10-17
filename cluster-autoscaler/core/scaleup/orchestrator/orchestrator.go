@@ -177,8 +177,13 @@ func (o *ScaleUpOrchestrator) ScaleUp(
 	}
 
 	// Pick some expansion option.
+	klog.V(1).Info("Get all options to decide the best")
+	for _, option := range options {
+		klog.V(1).Infof("Candidate ASG %s %d", option.NodeGroup.Id(), option.NodeCount)
+	}
 	bestOption := o.autoscalingContext.ExpanderStrategy.BestOption(options, nodeInfos)
 	if bestOption == nil || bestOption.NodeCount <= 0 {
+		klog.V(2).Info("Failed to decide scale-up plan")
 		return &status.ScaleUpStatus{
 			Result:                  status.ScaleUpNoOptionsAvailable,
 			PodsRemainUnschedulable: GetRemainingPods(podEquivalenceGroups, skippedNodeGroups),
@@ -199,6 +204,8 @@ func (o *ScaleUpOrchestrator) ScaleUp(
 	createNodeGroupResults := make([]nodegroups.CreateNodeGroupResult, 0)
 	if !bestOption.NodeGroup.Exist() {
 		oldId := bestOption.NodeGroup.Id()
+		klog.V(2).Infof("Best option group doesn't exist: %s", oldId)
+
 		createNodeGroupResult, aErr := o.processors.NodeGroupManager.CreateNodeGroup(o.autoscalingContext, bestOption.NodeGroup)
 		if aErr != nil {
 			return scaleUpError(
@@ -227,6 +234,7 @@ func (o *ScaleUpOrchestrator) ScaleUp(
 		}
 
 		for _, nodeGroup := range createNodeGroupResult.ExtraCreatedNodeGroups {
+			klog.V(2).Infof("Failover to nodegroup %v", nodeGroup.Id())
 			nodeInfo, aErr := utils.GetNodeInfoFromTemplate(nodeGroup, daemonSets, o.taintConfig)
 			if aErr != nil {
 				klog.Warningf("Cannot build node info for newly created extra node group %v; balancing similar node groups will not work; err=%v", nodeGroup.Id(), aErr)
@@ -504,7 +512,7 @@ func (o *ScaleUpOrchestrator) ComputeExpansionOption(
 	)
 	option.NodeCount, option.Pods = expansionEstimator.Estimate(pods, nodeInfo, nodeGroup)
 	// there could be 1000 pods, only log 1 for debug
-	klog.V(2).Infof("Scheduling option node count: %v, pods: %v", option.NodeCount, option.Pods[0])
+	klog.V(1).Infof("Found an option for pod %s: ASG %s, nodecount %d", pods[0].Name, nodeGroup.Id(), option.NodeCount)
 	metrics.UpdateDurationFromStart(metrics.Estimate, estimateStart)
 
 	autoscalingOptions, err := nodeGroup.GetOptions(o.autoscalingContext.NodeGroupDefaults)
@@ -547,7 +555,7 @@ func (o *ScaleUpOrchestrator) SchedulablePods(
 			schedulablePods = append(schedulablePods, eg.Pods...)
 			// Mark pod group as (theoretically) schedulable.
 			eg.Schedulable = true
-			klog.V(2).Infof("Pod %s can be scheduled on %s", samplePod.Name, nodeGroup.Id())
+			klog.V(1).Infof("Pod %s can be scheduled on %s along with similar %d pods", samplePod.Name, nodeGroup.Id(), len(eg.pods))
 		} else {
 			klog.V(2).Infof("Pod %s/%s can't be scheduled on %s, predicate checking error: %v", samplePod.Namespace, samplePod.Name, nodeGroup.Id(), err.VerboseMessage())
 			if podCount := len(eg.Pods); podCount > 1 {
