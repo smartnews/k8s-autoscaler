@@ -25,6 +25,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/types"
 	kube_util "k8s.io/autoscaler/cluster-autoscaler/utils/kubernetes"
 	pod_util "k8s.io/autoscaler/cluster-autoscaler/utils/pod"
 )
@@ -233,7 +234,11 @@ func GetPodsForDeletionOnNodeDrain(
 
 // ControllerRef returns the OwnerReference to pod's controller.
 func ControllerRef(pod *apiv1.Pod) *metav1.OwnerReference {
-	return metav1.GetControllerOf(pod)
+	cp := metav1.GetControllerOf(pod)
+	if pod.Labels["jobType"] == "spark" && pod.Labels["attemptId"] != "" {
+		cp.UID = types.UID{pod.Labels["attemptId"]}
+	}
+	return cp
 }
 
 // isPodTerminal checks whether the pod is in a terminal state.
