@@ -7,7 +7,7 @@ LDFLAGS?=-s
 ENVVAR=CGO_ENABLED=0
 GOOS?=linux
 GOARCH?=$(shell go env GOARCH)
-REGISTRY?=staging-k8s.gcr.io
+REGISTRY?=165463520094.dkr.ecr.ap-northeast-1.amazonaws.com/ops-spaas
 DOCKER_NETWORK?=default
 ifdef BUILD_TAGS
   TAGS_FLAG=--tags ${BUILD_TAGS}
@@ -58,7 +58,7 @@ ifdef BASEIMAGE
 		-f Dockerfile.$* .
 else
 	docker build --pull \
-		-t ${IMAGE}-$*:${TAG} \
+		-t ${IMAGE}:${TAG} \
 		-f Dockerfile.$* .
 endif
 	@echo "Image ${TAG}${FOR_PROVIDER}-$* completed"
