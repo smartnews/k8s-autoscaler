@@ -74,7 +74,8 @@ func (f *Factory) Build(names []string) (expander.Strategy, errors.AutoscalerErr
 			strategySeen = true
 		}
 	}
-	return newChainStrategy(filters, random.NewStrategy()), nil
+	//return newChainStrategy(filters, random.NewStrategy()), nil
+	return newChainStrategy(filters, mostpods.NewFilter()), nil
 }
 
 // RegisterDefaultExpanders is a convenience function, registering all known expanders in the Factory.
