@@ -83,8 +83,13 @@ func NewListerRegistry(allNode NodeLister, readyNode NodeLister, scheduledPod Po
 
 // NewListerRegistryWithDefaultListers returns a registry filled with listers of the default implementations
 func NewListerRegistryWithDefaultListers(kubeClient client.Interface, stopChannel <-chan struct{}) ListerRegistry {
-	unschedulablePodLister := NewUnschedulablePodLister(kubeClient, stopChannel)
-	scheduledPodLister := NewScheduledPodLister(kubeClient, stopChannel)
+	return NewListerRegistryWithDefaultListersInNamespace(kubeClient, apiv1.NamespaceAll, stopChannel)
+}
+
+// NewListerRegistryWithDefaultListersInNamespace returns a registry filled with listers of the default implementations, where only pods in the given namespace is monitored
+func NewListerRegistryWithDefaultListersInNamespace(kubeClient client.Interface, namespace string, stopChannel <-chan struct{}) ListerRegistry {
+	unschedulablePodLister := NewUnschedulablePodInNamespaceLister(kubeClient, namespace, stopChannel)
+	scheduledPodLister := NewScheduledPodInNamespaceLister(kubeClient, namespace, stopChannel)
 	readyNodeLister := NewReadyNodeLister(kubeClient, stopChannel)
 	allNodeLister := NewAllNodeLister(kubeClient, stopChannel)
 	podDisruptionBudgetLister := NewPodDisruptionBudgetLister(kubeClient, stopChannel)
@@ -203,12 +208,17 @@ func (lister *ScheduledPodLister) List() ([]*apiv1.Pod, error) {
 	return lister.podLister.List(labels.Everything())
 }
 
-// NewScheduledPodLister builds ScheduledPodLister
+// NewUnschedulablePodInNamespaceLister returns a lister providing pods that have been scheduled in all namespaces.
 func NewScheduledPodLister(kubeClient client.Interface, stopchannel <-chan struct{}) PodLister {
+	return NewScheduledPodInNamespaceLister(kubeClient, apiv1.NamespaceAll, stopchannel)
+}
+
+// NewScheduledPodInNamespaceLister returns a lister providing pods that have been scheduled in the given namespace.
+func NewScheduledPodInNamespaceLister(kubeClient client.Interface, namespace string, stopchannel <-chan struct{}) PodLister {
 	// watch unscheduled pods
 	selector := fields.ParseSelectorOrDie("spec.nodeName!=" + "" + ",status.phase!=" +
 		string(apiv1.PodSucceeded) + ",status.phase!=" + string(apiv1.PodFailed))
-	podListWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", apiv1.NamespaceAll, selector)
+	podListWatch := cache.NewListWatchFromClient(kubeClient.CoreV1().RESTClient(), "pods", namespace, selector)
 	store, reflector := cache.NewNamespaceKeyedIndexerAndReflector(podListWatch, &apiv1.Pod{}, time.Hour)
 	podLister := v1lister.NewPodLister(store)
 	go reflector.Run(stopchannel)
