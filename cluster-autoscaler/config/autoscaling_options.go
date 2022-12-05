@@ -94,6 +94,8 @@ type AutoscalingOptions struct {
 	CloudConfig string
 	// CloudProviderName sets the type of the cloud provider CA is about to run in. Allowed values: gce, aws
 	CloudProviderName string
+	// If set, ClusterAutoscaler will only look at pods under the namespace, otherwise it looks at all pods.
+	PodNamespace string
 	// NodeGroups is the list of node groups a.k.a autoscaling targets
 	NodeGroups []string
 	// ScaleDownEnabled is used to allow CA to scale down the cluster
