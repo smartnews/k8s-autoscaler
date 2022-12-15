@@ -142,6 +142,7 @@ var (
 	scaleUpFromZero            = flag.Bool("scale-up-from-zero", true, "Should CA scale up when there 0 ready nodes.")
 	maxNodeProvisionTime       = flag.Duration("max-node-provision-time", 15*time.Minute, "Maximum time CA waits for node to be provisioned")
 	maxPodEvictionTime         = flag.Duration("max-pod-eviction-time", 2*time.Minute, "Maximum time CA tries to evict a pod before giving up")
+	podNamespace               = flag.String("pod-namespace", "", "If set, ClusterAutoscaler will only look at pods under the namespace, otherwise it looks at all pods")
 	nodeGroupsFlag             = multiStringFlag(
 		"nodes",
 		"sets min,max size and other configuration data for a node group in a format accepted by cloud provider. Can be used multiple times. Format: <min>:<max>:<other...>")
@@ -256,6 +257,7 @@ func createAutoscalingOptions() config.AutoscalingOptions {
 		MaxMemoryTotal:                     maxMemoryTotal,
 		MinMemoryTotal:                     minMemoryTotal,
 		GpuTotal:                           parsedGpuTotal,
+		PodNamespace:                       *podNamespace,
 		NodeGroups:                         *nodeGroupsFlag,
 		ScaleDownDelayAfterAdd:             *scaleDownDelayAfterAdd,
 		ScaleDownDelayAfterDelete:          *scaleDownDelayAfterDelete,

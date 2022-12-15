@@ -77,5 +77,7 @@ func ExpanderStrategyFromStrings(expanderFlags []string, cloudProvider cloudprov
 			strategySeen = true
 		}
 	}
+
+	filters = append(filters, mostpods.NewFilter())
 	return newChainStrategy(filters, random.NewStrategy()), nil
 }

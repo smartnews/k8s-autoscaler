@@ -114,7 +114,12 @@ func NewAutoscalingContext(
 // NewAutoscalingKubeClients builds AutoscalingKubeClients out of basic client.
 func NewAutoscalingKubeClients(opts config.AutoscalingOptions, kubeClient, eventsKubeClient kube_client.Interface) *AutoscalingKubeClients {
 	listerRegistryStopChannel := make(chan struct{})
-	listerRegistry := kube_util.NewListerRegistryWithDefaultListers(kubeClient, listerRegistryStopChannel)
+	var listerRegistry kube_util.ListerRegistry
+	if opts.PodNamespace == "" {
+		listerRegistry = kube_util.NewListerRegistryWithDefaultListers(kubeClient, listerRegistryStopChannel)
+	} else {
+		listerRegistry = kube_util.NewListerRegistryWithDefaultListersInNamespace(kubeClient, opts.PodNamespace, listerRegistryStopChannel)
+	}
 	kubeEventRecorder := kube_util.CreateEventRecorder(eventsKubeClient, opts.RecordDuplicatedEvents)
 	logRecorder, err := utils.NewStatusMapRecorder(kubeClient, opts.ConfigNamespace, kubeEventRecorder, opts.WriteStatusConfigMap, opts.StatusConfigMapName)
 	if err != nil {

@@ -17,12 +17,12 @@ limitations under the License.
 package core
 
 import (
-	"k8s.io/autoscaler/cluster-autoscaler/utils"
 	"reflect"
 
 	apiv1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/autoscaler/cluster-autoscaler/processors/status"
+	"k8s.io/autoscaler/cluster-autoscaler/utils"
 	"k8s.io/autoscaler/cluster-autoscaler/utils/drain"
 	pod_utils "k8s.io/autoscaler/cluster-autoscaler/utils/pod"
 )
@@ -93,6 +93,11 @@ func groupPodsBySchedulingProperties(pods []*apiv1.Pod) map[equivalenceGroupId][
 // group id or nil if the group can't be found.
 func match(egs []equivalenceGroup, pod *apiv1.Pod) *equivalenceGroupId {
 	for _, g := range egs {
+		// skip checking for spark and flink jobs, because if they have the same owner their specs are identical
+		// but they have different job numbers in the label
+		if pod.Labels["jobType"] == "spark" || pod.Labels["jobType"] == "flink" {
+			return &g.id
+		}
 		if reflect.DeepEqual(pod.Labels, g.representant.Labels) && utils.PodSpecSemanticallyEqual(pod.Spec, g.representant.Spec) {
 			return &g.id
 		}
