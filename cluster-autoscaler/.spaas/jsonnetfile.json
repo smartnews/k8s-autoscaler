@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "dependencies": [
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/jsonnet-libs/k8s-libsonnet.git",
+          "subdir": "1.20"
+        }
+      },
+      "version": "main"
+    },
+    {
+      "source": {
+        "git": {
+          "remote": "https://github.com/smartnews/ops-pipeline.git",
+          "subdir": "spaas"
+        }
+      },
+      "version": "master"
+    }
+  ],
+  "legacyImports": true
+}
