@@ -38,7 +38,7 @@ if [[ "${IMAGE_TO_PUSH}" == "gcr.io/"* ]] || [[ "${IMAGE_TO_PUSH}" == "staging-k
     fi
 fi
 
-echo "About to push image $IMAGE_TO_PUSH"
+echo "About to push image using : ${docker_push_cmd[@]} push $IMAGE_TO_PUSH"
 read -r -p "Are you sure? [y/N] " response
 if [[ "$response" =~ ^([yY])+$ ]]; then
   "${docker_push_cmd[@]}" pull $IMAGE_TO_PUSH

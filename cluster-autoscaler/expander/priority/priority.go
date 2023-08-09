@@ -33,8 +33,6 @@ import (
 )
 
 const (
-	// PriorityConfigMapName defines a name of the ConfigMap used to store priority expander configuration
-	PriorityConfigMapName = "cluster-autoscaler-priority-expander"
 	// ConfigMapKey defines the key used in the ConfigMap to configure priorities
 	ConfigMapKey = "priorities"
 )
@@ -42,26 +40,29 @@ const (
 type priorities map[int][]*regexp.Regexp
 
 type priority struct {
-	logRecorder      record.EventRecorder
-	okConfigUpdates  int
-	badConfigUpdates int
-	configMapLister  v1lister.ConfigMapNamespaceLister
+	priorityConfigMapName string
+	logRecorder           record.EventRecorder
+	okConfigUpdates       int
+	badConfigUpdates      int
+	configMapLister       v1lister.ConfigMapNamespaceLister
 }
 
 // NewFilter returns an expansion filter that picks node groups based on user-defined priorities
 func NewFilter(configMapLister v1lister.ConfigMapNamespaceLister,
-	logRecorder record.EventRecorder) expander.Filter {
+	logRecorder record.EventRecorder,
+	priorityConfigMapName string) expander.Filter {
 	res := &priority{
 		logRecorder:     logRecorder,
 		configMapLister: configMapLister,
+		priorityConfigMapName: priorityConfigMapName,
 	}
 	return res
 }
 
 func (p *priority) reloadConfigMap() (priorities, *apiv1.ConfigMap, error) {
-	cm, err := p.configMapLister.Get(PriorityConfigMapName)
+	cm, err := p.configMapLister.Get(p.priorityConfigMapName)
 	if err != nil {
-		return nil, nil, fmt.Errorf("Priority expander config map %s not found: %v", PriorityConfigMapName, err)
+		return nil, nil, fmt.Errorf("Priority expander config map %s not found: %v", p.priorityConfigMapName, err)
 	}
 
 	prioString, found := cm.Data[ConfigMapKey]
@@ -91,7 +92,7 @@ func (p *priority) logConfigWarning(cm *apiv1.ConfigMap, reason, msg string) {
 func (p *priority) parsePrioritiesYAMLString(prioritiesYAML string) (priorities, error) {
 	if prioritiesYAML == "" {
 		return nil, fmt.Errorf("priority configuration in %s configmap is empty; please provide valid configuration",
-			PriorityConfigMapName)
+			p.priorityConfigMapName)
 	}
 	var config map[int][]string
 	if err := yaml.Unmarshal([]byte(prioritiesYAML), &config); err != nil {

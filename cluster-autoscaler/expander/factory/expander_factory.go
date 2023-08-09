@@ -35,7 +35,7 @@ import (
 // take in whole opts and access stuff here
 func ExpanderStrategyFromStrings(expanderFlags []string, cloudProvider cloudprovider.CloudProvider,
 	autoscalingKubeClients *context.AutoscalingKubeClients, kubeClient kube_client.Interface,
-	configNamespace string, GRPCExpanderCert string, GRPCExpanderURL string) (expander.Strategy, errors.AutoscalerError) {
+	configNamespace string, priorityConfigMapName string, GRPCExpanderCert string, GRPCExpanderURL string) (expander.Strategy, errors.AutoscalerError) {
 	var filters []expander.Filter
 	seenExpanders := map[string]struct{}{}
 	strategySeen := false
@@ -67,7 +67,7 @@ func ExpanderStrategyFromStrings(expanderFlags []string, cloudProvider cloudprov
 			// This should be currently OK.
 			stopChannel := make(chan struct{})
 			lister := kubernetes.NewConfigMapListerForNamespace(kubeClient, stopChannel, configNamespace)
-			filters = append(filters, priority.NewFilter(lister.ConfigMaps(configNamespace), autoscalingKubeClients.Recorder))
+			filters = append(filters, priority.NewFilter(lister.ConfigMaps(configNamespace), autoscalingKubeClients.Recorder, priorityConfigMapName))
 		case expander.GRPCExpanderName:
 			filters = append(filters, grpcplugin.NewFilter(GRPCExpanderCert, GRPCExpanderURL))
 		default:
