@@ -80,7 +80,7 @@ func (f *Factory) Build(names []string) (expander.Strategy, errors.AutoscalerErr
 }
 
 // RegisterDefaultExpanders is a convenience function, registering all known expanders in the Factory.
-func (f *Factory) RegisterDefaultExpanders(cloudProvider cloudprovider.CloudProvider, autoscalingKubeClients *context.AutoscalingKubeClients, kubeClient kube_client.Interface, configNamespace string, GRPCExpanderCert string, GRPCExpanderURL string) {
+func (f *Factory) RegisterDefaultExpanders(cloudProvider cloudprovider.CloudProvider, autoscalingKubeClients *context.AutoscalingKubeClients, kubeClient kube_client.Interface, configNamespace string, priorityConfigMapName string, GRPCExpanderCert string, GRPCExpanderURL string) {
 	f.RegisterFilter(expander.RandomExpanderName, random.NewFilter)
 	f.RegisterFilter(expander.MostPodsExpanderName, mostpods.NewFilter)
 	f.RegisterFilter(expander.LeastWasteExpanderName, waste.NewFilter)
@@ -95,7 +95,7 @@ func (f *Factory) RegisterDefaultExpanders(cloudProvider cloudprovider.CloudProv
 		// This should be currently OK.
 		stopChannel := make(chan struct{})
 		lister := kubernetes.NewConfigMapListerForNamespace(kubeClient, stopChannel, configNamespace)
-		return priority.NewFilter(lister.ConfigMaps(configNamespace), autoscalingKubeClients.Recorder)
+		return priority.NewFilter(lister.ConfigMaps(configNamespace), autoscalingKubeClients.Recorder, priorityConfigMapName)
 	})
 	f.RegisterFilter(expander.GRPCExpanderName, func() expander.Filter { return grpcplugin.NewFilter(GRPCExpanderCert, GRPCExpanderURL) })
 }

@@ -68,6 +68,9 @@ push-image: push-image-arch-$(GOARCH)
 push-image-arch-%:
 	./push_image.sh ${IMAGE}-$*:${TAG}
 
+push-image-no-arch:
+	./push_image.sh ${IMAGE}:${TAG}
+
 push-manifest:
 	docker manifest create ${IMAGE}:${TAG} \
 	    $(addprefix $(REGISTRY)/cluster-autoscaler$(PROVIDER)-, $(addsuffix :$(TAG), $(ALL_ARCH)))
