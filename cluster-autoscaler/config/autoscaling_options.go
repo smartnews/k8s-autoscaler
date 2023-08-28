@@ -71,6 +71,8 @@ type AutoscalingOptions struct {
 	EstimatorName string
 	// ExpanderNames sets the chain of node group expanders to be used in scale up
 	ExpanderNames string
+	// ExpanderPriorityConfigMapName set the name of the ConfigMap used to store priority expander configuration
+	ExpanderPriorityConfigMapName string
 	// GRPCExpanderCert is the location of the cert passed to the gRPC server for TLS when using the gRPC expander
 	GRPCExpanderCert string
 	// GRPCExpanderURL is the url of the gRPC server when using the gRPC expander

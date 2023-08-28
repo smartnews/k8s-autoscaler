@@ -156,7 +156,10 @@ var (
 	estimatorFlag = flag.String("estimator", estimator.BinpackingEstimatorName,
 		"Type of resource estimator to be used in scale up. Available values: ["+strings.Join(estimator.AvailableEstimators, ",")+"]")
 
-	expanderFlag = flag.String("expander", expander.RandomExpanderName, "Type of node group expander to be used in scale up. Available values: ["+strings.Join(expander.AvailableExpanders, ",")+"]. Specifying multiple values separated by commas will call the expanders in succession until there is only one option remaining. Ties still existing after this process are broken randomly.")
+	expanderFlag                  = flag.String("expander", expander.RandomExpanderName, "Type of node group expander to be used in scale up. Available values: ["+strings.Join(expander.AvailableExpanders, ",")+"]. Specifying multiple values separated by commas will call the expanders in succession until there is only one option remaining. Ties still existing after this process are broken randomly.")
+	expanderPriorityConfigMapName = flag.String(
+		"expander-priority-configmap", "cluster-autoscaler-priority-expander",
+		"a name of the ConfigMap used to store priority expander configuration")
 
 	grpcExpanderCert = flag.String("grpc-expander-cert", "", "Path to cert used by gRPC server over TLS")
 	grpcExpanderURL  = flag.String("grpc-expander-url", "", "URL to reach gRPC expander server.")
@@ -240,6 +243,7 @@ func createAutoscalingOptions() config.AutoscalingOptions {
 		ScaleUpFromZero:                    *scaleUpFromZero,
 		EstimatorName:                      *estimatorFlag,
 		ExpanderNames:                      *expanderFlag,
+		ExpanderPriorityConfigMapName:      		*expanderPriorityConfigMapName,
 		GRPCExpanderCert:                   *grpcExpanderCert,
 		GRPCExpanderURL:                    *grpcExpanderURL,
 		IgnoreDaemonSetsUtilization:        *ignoreDaemonSetsUtilization,
