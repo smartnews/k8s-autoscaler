@@ -555,7 +555,7 @@ func (o *ScaleUpOrchestrator) SchedulablePods(
 			schedulablePods = append(schedulablePods, eg.Pods...)
 			// Mark pod group as (theoretically) schedulable.
 			eg.Schedulable = true
-			klog.V(1).Infof("Pod %s can be scheduled on %s along with similar %d pods", samplePod.Name, nodeGroup.Id(), len(eg.pods))
+			klog.V(1).Infof("Pod %s can be scheduled on %s along with similar %d pods", samplePod.Name, nodeGroup.Id(), len(eg.Pods))
 		} else {
 			klog.V(2).Infof("Pod %s/%s can't be scheduled on %s, predicate checking error: %v", samplePod.Namespace, samplePod.Name, nodeGroup.Id(), err.VerboseMessage())
 			if podCount := len(eg.Pods); podCount > 1 {
