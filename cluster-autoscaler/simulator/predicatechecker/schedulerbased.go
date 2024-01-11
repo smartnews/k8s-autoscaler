@@ -125,6 +125,9 @@ func (p *SchedulerBasedPredicateChecker) FitsAnyNodeMatching(clusterSnapshot clu
 			continue
 		}
 
+		if isNodeForScyllaPod(pod, nodeInfo) {
+			state.SkipFilterPlugins.Insert("VolumeBinding")
+		}
 		filterStatus := p.framework.RunFilterPlugins(context.TODO(), state, pod, nodeInfo)
 		if filterStatus.IsSuccess() {
 			p.lastIndex = (p.lastIndex + i + 1) % len(nodeInfosList)
@@ -159,6 +162,9 @@ func (p *SchedulerBasedPredicateChecker) CheckPredicates(clusterSnapshot cluster
 			emptyString)
 	}
 
+	if isNodeForScyllaPod(pod, nodeInfo) {
+		state.SkipFilterPlugins.Insert("VolumeBinding")
+	}
 	filterStatus := p.framework.RunFilterPlugins(context.TODO(), state, pod, nodeInfo)
 
 	if !filterStatus.IsSuccess() {
@@ -194,4 +200,16 @@ func (p *SchedulerBasedPredicateChecker) buildDebugInfo(filterName string, nodeI
 	default:
 		return emptyString
 	}
+}
+
+func isNodeForScyllaPod(pod *apiv1.Pod, nodeInfo *schedulerframework.NodeInfo) bool {
+	if pod.Labels["app"] == "scylla" && nodeInfo.Node().Labels["purpose"] == "scylla" {
+		nodeSelectorTerm := pod.Spec.Affinity.NodeAffinity.RequiredDuringSchedulingIgnoredDuringExecution.NodeSelectorTerms[0]
+		for _, matchExpression := range nodeSelectorTerm.MatchExpressions {
+			if matchExpression.Key == "nodegroup" && matchExpression.Values[0] == nodeInfo.Node().Labels["nodegroup"] {
+				return true
+			}
+		}
+	}
+	return false
 }
